@@ -2,32 +2,31 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val EmeraldPrimary = Color(0xFF14532D)
-val EmeraldContainer = Color(0xFFD7EFE0)
-val OnEmeraldContainer = Color(0xFF0A2E18)
+// Light mode: White background with crisp Black accents
+val MonoBlackPrimary = Color(0xFF111111)
+val MonoLightContainer = Color(0xFFEBEBEB)
+val MonoOnLightContainer = Color(0xFF0D0D0D)
 
-val GoldSecondary = Color(0xFFC58B17)
-val GoldContainer = Color(0xFFFFF0CC)
-val OnGoldContainer = Color(0xFF422C00)
+val MonoCharcoalSecondary = Color(0xFF262626)
+val MonoSoftGrayContainer = Color(0xFFE2E2E2)
+val MonoOnSoftGrayContainer = Color(0xFF111111)
 
-val TealTertiary = Color(0xFF1D6A6B)
-val TealContainer = Color(0xFFD2F0F0)
+val MonoSlateTertiary = Color(0xFF333333)
+val MonoTertiaryContainer = Color(0xFFEDEDED)
 
-val CreamBackground = Color(0xFFFAF6EE)
-val WarmSurface = Color(0xFFFFFFFF)
-val SandSurfaceVariant = Color(0xFFF1E9DA)
+val PureWhiteBackground = Color(0xFFFFFFFF)
+val SoftWhiteSurface = Color(0xFFFAFAFA)
+val NeutralSurfaceVariant = Color(0xFFEFEFEF)
 
-val InkDark = Color(0xFF18241C)
-val MutedSlate = Color(0xFF56665C)
-val OutlineSand = Color(0xFFD8CEBC)
+val CrispBlackInk = Color(0xFF0D0D0D)
+val MutedGrayInk = Color(0xFF4A4A4A)
+val OutlineGray = Color(0xFFD1D1D1)
 
-val SuccessGreen = Color(0xFF15803D)
-val WarningAmber = Color(0xFFD97706)
 val ErrorCrimson = Color(0xFFB91C1C)
 
-// Dark theme counterparts
-val DarkEmeraldPrimary = Color(0xFF7FD99E)
-val DarkGoldSecondary = Color(0xFFF6C453)
-val DarkBackground = Color(0xFF101913)
-val DarkSurface = Color(0xFF18241D)
-val DarkSurfaceVariant = Color(0xFF233329)
+// Dark mode: Black background with crisp White accents
+val DarkMonoWhitePrimary = Color(0xFFFFFFFF)
+val DarkMonoCharcoalSecondary = Color(0xFFE0E0E0)
+val DarkPureBlackBackground = Color(0xFF000000)
+val DarkElevatedSurface = Color(0xFF121212)
+val DarkElevatedSurfaceVariant = Color(0xFF1E1E1E)
