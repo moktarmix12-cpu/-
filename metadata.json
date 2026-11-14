@@ -1,0 +1,6 @@
+{
+  "name": "رحلتي مع سيرة الرسول ﷺ",
+  "description": "كتاب تعليمي تفاعلي لتعليم سيرة النبي محمد ﷺ للأطفال مع قراءة صوتية واختبارات وشهادات ونظام تفعيل وإدارة",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

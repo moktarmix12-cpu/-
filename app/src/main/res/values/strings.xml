@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">رحلتي مع سيرة الرسول ﷺ</string>
+    <string name="sign_in_with_google">تسجيل الدخول بحساب Google</string>
+    <string name="welcome_subtitle">كتاب تفاعلي ممتع يعرّف الأطفال بسيرة نبينا محمد ﷺ بأسلوب سهل وشيّق</string>
+    <string name="payment_receiver_phone">49719739</string>
+    <string name="payment_amount_label">200 أوقية موريتانية جديدة (MRU) — دفعة واحدة مدى الحياة</string>
+</resources>

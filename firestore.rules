@@ -1,0 +1,286 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid)) ||
+        ('email_verified' in request.auth.token && 'email' in request.auth.token && request.auth.token.email_verified == true && request.auth.token.email == 'moktar.mix12@gmail.com')
+      );
+    }
+
+    function isUserActivated() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActivated == true &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.revoked == false;
+    }
+
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.childName is string && data.childName.size() >= 1 && data.childName.size() <= 60 &&
+        (!('email' in data) || data.email == null || (data.email is string && data.email.size() <= 120)) &&
+        data.isActivated is bool &&
+        data.revoked is bool &&
+        data.activationMethod in ['none', 'primary_code', 'unique_code', 'admin'] &&
+        (!('redeemedCodeHash' in data) || data.redeemedCodeHash == null || (data.redeemedCodeHash is string && data.redeemedCodeHash.size() <= 128)) &&
+        data.stars is int && data.stars >= 0 && data.stars <= 1000 &&
+        data.totalScore is int && data.totalScore >= 0 && data.totalScore <= 10000 &&
+        data.completedChapters is list && data.completedChapters.size() <= 12 &&
+        (data.completedChapters.size() == 0 || data.completedChapters[0] is int) &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPrimaryCodeRedemption(data) {
+      return data.activationMethod == 'primary_code' &&
+        'redeemedCodeHash' in data &&
+        data.redeemedCodeHash is string &&
+        data.redeemedCodeHash.size() == 64 &&
+        (
+          (
+            exists(/databases/$(database)/documents/appConfig/activation) &&
+            get(/databases/$(database)/documents/appConfig/activation).data.primaryEnabled == true &&
+            data.redeemedCodeHash == get(/databases/$(database)/documents/appConfig/activation).data.primaryCodeHash
+          ) ||
+          (
+            !exists(/databases/$(database)/documents/appConfig/activation) &&
+            data.redeemedCodeHash == 'ad80443f7e942c03ef090b54cf538e0f8e421c86901b647e1c1eacf59b4bdb0e'
+          )
+        );
+    }
+
+    function isValidUniqueCodeRedemption(data, uid) {
+      return data.activationMethod == 'unique_code' &&
+        'redeemedCodeHash' in data &&
+        data.redeemedCodeHash is string &&
+        isValidId(data.redeemedCodeHash) &&
+        exists(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)) &&
+        get(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.isActive == true &&
+        get(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.usedCount < get(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.maxUses &&
+        (
+          get(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.boundUserId == '' ||
+          get(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.boundUserId == uid
+        ) &&
+        getAfter(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.usedCount == get(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.usedCount + 1 &&
+        getAfter(/databases/$(database)/documents/activationCodes/$(data.redeemedCodeHash)).data.boundUserId == uid;
+    }
+
+    function isValidPaymentRequest(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+        data.childName is string && data.childName.size() >= 1 && data.childName.size() <= 60 &&
+        (!('userEmail' in data) || data.userEmail == null || (data.userEmail is string && data.userEmail.size() <= 120)) &&
+        data.method in ['Bankily', 'Mouv Money', 'Sedad', 'Click'] &&
+        data.senderPhone is string && data.senderPhone.size() >= 4 && data.senderPhone.size() <= 30 &&
+        data.receiverPhone == '49719739' &&
+        data.amountMru == 200 &&
+        (!('transactionNote' in data) || data.transactionNote == null || (data.transactionNote is string && data.transactionNote.size() <= 300)) &&
+        data.receiptBase64 is string && data.receiptBase64.size() >= 10 && data.receiptBase64.size() <= 450000 &&
+        data.status in ['PENDING', 'APPROVED', 'REJECTED'] &&
+        data.adminNote is string && data.adminNote.size() <= 300 &&
+        data.issuedCode is string && data.issuedCode.size() <= 40 &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidActivationCode(data) {
+      return data.codeDisplay is string && data.codeDisplay.size() >= 3 && data.codeDisplay.size() <= 40 &&
+        data.isActive is bool &&
+        data.maxUses is int && data.maxUses >= 1 && data.maxUses <= 10000 &&
+        data.usedCount is int && data.usedCount >= 0 && data.usedCount <= 10000 &&
+        data.boundUserId is string && data.boundUserId.size() <= 128 &&
+        data.note is string && data.note.size() <= 200 &&
+        data.createdAt is timestamp && data.createdAt <= request.time &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidAppConfig(data) {
+      return data.primaryCodeHash is string && data.primaryCodeHash.size() == 64 &&
+        data.primaryCodeDisplay is string && data.primaryCodeDisplay.size() >= 3 && data.primaryCodeDisplay.size() <= 40 &&
+        data.primaryEnabled is bool &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidChapter(data) {
+      return data.chapterNumber is int && data.chapterNumber >= 1 && data.chapterNumber <= 20 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        data.shortDescription is string && data.shortDescription.size() <= 250 &&
+        data.illustration is string && data.illustration.size() >= 2 && data.illustration.size() <= 40 &&
+        data.isFree is bool &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidLessonContent(data) {
+      return data.chapterNumber is int && data.chapterNumber >= 1 && data.chapterNumber <= 20 &&
+        data.title is string && data.title.size() >= 2 && data.title.size() <= 120 &&
+        data.illustration is string && data.illustration.size() >= 2 && data.illustration.size() <= 40 &&
+        data.isFree is bool &&
+        data.content is string && data.content.size() >= 10 && data.content.size() <= 15000 &&
+        data.sourceNote is string && data.sourceNote.size() <= 500 &&
+        data.questions is list && data.questions.size() <= 20 &&
+        (data.questions.size() == 0 || data.questions[0] is map) &&
+        data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    // 1. Users collection
+    match /users/{userId} {
+      allow get: if isSignedIn() && isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isSignedIn() &&
+        isValidId(userId) &&
+        isOwner(userId) &&
+        isValidUserProfile(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().keys().hasAll(['userId', 'childName', 'isActivated', 'revoked', 'activationMethod', 'stars', 'totalScore', 'completedChapters', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['userId', 'childName', 'email', 'isActivated', 'revoked', 'activationMethod', 'redeemedCodeHash', 'stars', 'totalScore', 'completedChapters', 'createdAt', 'updatedAt']) &&
+        incoming().isActivated == false &&
+        incoming().revoked == false &&
+        incoming().activationMethod == 'none' &&
+        incoming().stars == 0 &&
+        incoming().totalScore == 0 &&
+        incoming().completedChapters.size() == 0;
+
+      allow update: if isSignedIn() && isValidId(userId) && isValidUserProfile(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt && (
+          (isAdmin() && incoming().diff(existing()).affectedKeys().hasOnly(['childName', 'isActivated', 'revoked', 'activationMethod', 'redeemedCodeHash', 'stars', 'totalScore', 'completedChapters', 'updatedAt'])) ||
+          (
+            isOwner(userId) &&
+            existing().revoked == false &&
+            incoming().revoked == existing().revoked && (
+              // Action 1: Update child name & learning progress
+              (
+                incoming().isActivated == existing().isActivated &&
+                incoming().activationMethod == existing().activationMethod &&
+                (!('redeemedCodeHash' in incoming()) || incoming().redeemedCodeHash == existing().get('redeemedCodeHash', '')) &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['childName', 'stars', 'totalScore', 'completedChapters', 'updatedAt'])
+              ) ||
+              // Action 2: Redeem activation code (primary or unique)
+              (
+                existing().isActivated == false &&
+                incoming().isActivated == true &&
+                (isValidPrimaryCodeRedemption(incoming()) || isValidUniqueCodeRedemption(incoming(), userId)) &&
+                incoming().diff(existing()).affectedKeys().hasOnly(['isActivated', 'activationMethod', 'redeemedCodeHash', 'updatedAt'])
+              )
+            )
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // 2. Payment Requests collection
+    match /paymentRequests/{requestId} {
+      allow get: if isSignedIn() && isValidId(requestId) && (isAdmin() || existing().userId == request.auth.uid);
+      allow list: if isSignedIn() && (isAdmin() || resource.data.userId == request.auth.uid);
+
+      allow create: if isSignedIn() &&
+        isValidId(requestId) &&
+        isValidPaymentRequest(incoming()) &&
+        incoming().userId == request.auth.uid &&
+        incoming().keys().hasAll(['userId', 'childName', 'method', 'senderPhone', 'receiverPhone', 'amountMru', 'receiptBase64', 'status', 'adminNote', 'issuedCode', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['userId', 'childName', 'userEmail', 'method', 'senderPhone', 'receiverPhone', 'amountMru', 'transactionNote', 'receiptBase64', 'status', 'adminNote', 'issuedCode', 'createdAt', 'updatedAt']) &&
+        incoming().status == 'PENDING' &&
+        incoming().adminNote == '' &&
+        incoming().issuedCode == '';
+
+      allow update: if isSignedIn() &&
+        isValidId(requestId) &&
+        isAdmin() &&
+        isValidPaymentRequest(incoming()) &&
+        incoming().userId == existing().userId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'issuedCode', 'updatedAt']);
+
+      allow delete: if isAdmin() && isValidId(requestId);
+    }
+
+    // 3. Activation Codes collection (document ID is SHA-256 hash of code)
+    match /activationCodes/{codeHash} {
+      allow get: if isAdmin() && isValidId(codeHash);
+      allow list: if isAdmin();
+
+      allow create: if isAdmin() &&
+        isValidId(codeHash) &&
+        isValidActivationCode(incoming()) &&
+        incoming().keys().hasAll(['codeDisplay', 'isActive', 'maxUses', 'usedCount', 'boundUserId', 'note', 'createdAt', 'updatedAt']) &&
+        incoming().keys().hasOnly(['codeDisplay', 'isActive', 'maxUses', 'usedCount', 'boundUserId', 'note', 'createdAt', 'updatedAt']);
+
+      allow update: if isSignedIn() && isValidId(codeHash) && isValidActivationCode(incoming()) &&
+        incoming().createdAt == existing().createdAt && (
+          isAdmin() ||
+          (
+            existing().isActive == true &&
+            existing().usedCount < existing().maxUses &&
+            (existing().boundUserId == '' || existing().boundUserId == request.auth.uid) &&
+            incoming().codeDisplay == existing().codeDisplay &&
+            incoming().isActive == existing().isActive &&
+            incoming().maxUses == existing().maxUses &&
+            incoming().note == existing().note &&
+            incoming().usedCount == existing().usedCount + 1 &&
+            incoming().boundUserId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['usedCount', 'boundUserId', 'updatedAt']) &&
+            getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.isActivated == true &&
+            getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.redeemedCodeHash == codeHash
+          )
+        );
+
+      allow delete: if isAdmin() && isValidId(codeHash);
+    }
+
+    // 4. App Config (Primary activation code hash managed by admin)
+    match /appConfig/{configId} {
+      allow get, list: if isAdmin();
+      allow create, update: if isAdmin() && isValidId(configId) && isValidAppConfig(incoming()) &&
+        incoming().keys().hasAll(['primaryCodeHash', 'primaryCodeDisplay', 'primaryEnabled', 'updatedAt']) &&
+        incoming().keys().hasOnly(['primaryCodeHash', 'primaryCodeDisplay', 'primaryEnabled', 'updatedAt']);
+      allow delete: if isAdmin() && isValidId(configId);
+    }
+
+    // 5. Chapters metadata (catalog list)
+    match /chapters/{chapterId} {
+      allow get, list: if isSignedIn();
+      allow create, update: if isAdmin() && isValidId(chapterId) && isValidChapter(incoming());
+      allow delete: if isAdmin() && isValidId(chapterId);
+    }
+
+    // 6. Protected Lesson Contents & Quizzes
+    match /lessonContents/{chapterId} {
+      allow get: if isSignedIn() && isValidId(chapterId) && (chapterId == '1' || isAdmin() || isUserActivated());
+      allow list: if isAdmin();
+      allow create, update: if isAdmin() && isValidId(chapterId) && isValidLessonContent(incoming());
+      allow delete: if isAdmin() && isValidId(chapterId);
+    }
+
+    // 7. Admins collection
+    match /admins/{adminUid} {
+      allow get: if isSignedIn() && isValidId(adminUid) && (request.auth.uid == adminUid || isAdmin());
+      allow list, create, update, delete: if isAdmin();
+    }
+  }
+}

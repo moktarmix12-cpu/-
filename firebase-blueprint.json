@@ -1,0 +1,144 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "Child learner profile, activation status, stars, score, and completed chapters.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Authenticated Firebase UID." },
+        "childName": { "type": "string", "description": "Child display name (ages 6-12)." },
+        "email": { "type": "string", "description": "Parent or user Google email." },
+        "isActivated": { "type": "boolean", "description": "Whether full curriculum (chapters 2-12) is unlocked." },
+        "revoked": { "type": "boolean", "description": "Whether access was revoked by admin." },
+        "activationMethod": { "type": "string", "enum": ["none", "primary_code", "unique_code", "admin"] },
+        "redeemedCodeHash": { "type": "string", "description": "SHA-256 hash of activation code used." },
+        "stars": { "type": "integer", "description": "Total motivational stars earned." },
+        "totalScore": { "type": "integer", "description": "Total quiz points earned." },
+        "completedChapters": { "type": "array", "description": "Bounded list of completed chapter numbers (1..12)." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": ["userId", "childName", "isActivated", "revoked", "activationMethod", "stars", "totalScore", "completedChapters", "createdAt", "updatedAt"]
+    },
+    "PaymentRequest": {
+      "title": "PaymentRequest",
+      "description": "Manual 200 MRU transfer receipt submitted for admin verification.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "childName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "method": { "type": "string", "enum": ["Bankily", "Mouv Money", "Sedad", "Click"] },
+        "senderPhone": { "type": "string" },
+        "receiverPhone": { "type": "string" },
+        "amountMru": { "type": "integer" },
+        "transactionNote": { "type": "string" },
+        "receiptBase64": { "type": "string", "description": "Compressed receipt image encoded as Base64 JPEG." },
+        "status": { "type": "string", "enum": ["PENDING", "APPROVED", "REJECTED"] },
+        "adminNote": { "type": "string" },
+        "issuedCode": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "childName", "method", "senderPhone", "receiverPhone", "amountMru", "receiptBase64", "status", "adminNote", "issuedCode", "createdAt", "updatedAt"]
+    },
+    "ActivationCode": {
+      "title": "ActivationCode",
+      "description": "Admin-managed unique or multi-use activation code keyed by SHA-256 hash.",
+      "type": "object",
+      "properties": {
+        "codeDisplay": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "maxUses": { "type": "integer" },
+        "usedCount": { "type": "integer" },
+        "boundUserId": { "type": "string" },
+        "note": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["codeDisplay", "isActive", "maxUses", "usedCount", "boundUserId", "note", "createdAt", "updatedAt"]
+    },
+    "AppConfig": {
+      "title": "AppConfig",
+      "description": "Admin-only primary activation code configuration.",
+      "type": "object",
+      "properties": {
+        "primaryCodeHash": { "type": "string" },
+        "primaryCodeDisplay": { "type": "string" },
+        "primaryEnabled": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["primaryCodeHash", "primaryCodeDisplay", "primaryEnabled", "updatedAt"]
+    },
+    "ChapterMetadata": {
+      "title": "ChapterMetadata",
+      "description": "Public chapter catalog metadata (title, number, free preview flag).",
+      "type": "object",
+      "properties": {
+        "chapterNumber": { "type": "integer" },
+        "title": { "type": "string" },
+        "shortDescription": { "type": "string" },
+        "illustration": { "type": "string" },
+        "isFree": { "type": "boolean" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chapterNumber", "title", "shortDescription", "illustration", "isFree", "updatedAt"]
+    },
+    "LessonContent": {
+      "title": "LessonContent",
+      "description": "Full chapter narrative, reliable Islamic source note, and quiz questions.",
+      "type": "object",
+      "properties": {
+        "chapterNumber": { "type": "integer" },
+        "title": { "type": "string" },
+        "illustration": { "type": "string" },
+        "isFree": { "type": "boolean" },
+        "content": { "type": "string" },
+        "sourceNote": { "type": "string" },
+        "questions": { "type": "array" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["chapterNumber", "title", "illustration", "isFree", "content", "sourceNote", "questions", "updatedAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Explicit admin role document.",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["email", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Child learning profile and activation state scoped to userId."
+    },
+    "/paymentRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/PaymentRequest" },
+      "description": "Manual payment receipts submitted for admin review."
+    },
+    "/activationCodes/{codeHash}": {
+      "schema": { "$ref": "#/entities/ActivationCode" },
+      "description": "Hashed unique activation codes controlled by admin."
+    },
+    "/appConfig/{configId}": {
+      "schema": { "$ref": "#/entities/AppConfig" },
+      "description": "Admin-managed primary activation code settings."
+    },
+    "/chapters/{chapterId}": {
+      "schema": { "$ref": "#/entities/ChapterMetadata" },
+      "description": "Catalog metadata for the 12 Seerah chapters."
+    },
+    "/lessonContents/{chapterId}": {
+      "schema": { "$ref": "#/entities/LessonContent" },
+      "description": "Protected lesson text and quiz questions for each chapter."
+    },
+    "/admins/{adminUid}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Authorized admin UIDs."
+    }
+  }
+}
