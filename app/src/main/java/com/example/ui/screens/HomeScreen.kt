@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material.icons.filled.WorkspacePremium
 import androidx.compose.material3.Button
@@ -61,6 +62,8 @@ import com.example.ui.components.ChapterIllustrationBanner
 import com.example.ui.components.EditChildNameDialog
 import com.example.ui.components.IslamicArchBackground
 import com.example.ui.components.StatBadge
+import com.example.ui.components.ThemePickerDialog
+import com.example.ui.theme.AppBackgroundTheme
 import com.example.ui.viewmodel.UiState
 
 @Composable
@@ -68,6 +71,8 @@ fun HomeScreen(
     userProfileState: UiState<UserProfile>,
     chapters: List<ChapterMetadata>,
     isAdmin: Boolean,
+    currentTheme: AppBackgroundTheme,
+    onSelectTheme: (AppBackgroundTheme) -> Unit,
     onChapterClick: (ChapterMetadata, Boolean) -> Unit,
     onOpenSummary: () -> Unit,
     onOpenPayment: () -> Unit,
@@ -77,6 +82,7 @@ fun HomeScreen(
     onSignOut: () -> Unit
 ) {
     var showEditName by remember { mutableStateOf(false) }
+    var showThemePicker by remember { mutableStateOf(false) }
 
     Scaffold(
         containerColor = MaterialTheme.colorScheme.background
@@ -128,6 +134,14 @@ fun HomeScreen(
                     )
                 }
 
+                if (showThemePicker) {
+                    ThemePickerDialog(
+                        currentTheme = currentTheme,
+                        onSelectTheme = onSelectTheme,
+                        onDismiss = { showThemePicker = false }
+                    )
+                }
+
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
@@ -147,6 +161,7 @@ fun HomeScreen(
                                 isAdmin = isAdmin,
                                 topPadding = innerPadding.calculateTopPadding(),
                                 onEditName = { showEditName = true },
+                                onOpenThemePicker = { showThemePicker = true },
                                 onOpenCertificate = onOpenCertificate,
                                 onOpenAdmin = onOpenAdmin,
                                 onSignOut = onSignOut
@@ -203,6 +218,7 @@ private fun HomeHeader(
     isAdmin: Boolean,
     topPadding: androidx.compose.ui.unit.Dp,
     onEditName: () -> Unit,
+    onOpenThemePicker: () -> Unit,
     onOpenCertificate: () -> Unit,
     onOpenAdmin: () -> Unit,
     onSignOut: () -> Unit
@@ -265,6 +281,16 @@ private fun HomeHeader(
                 }
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(
+                        onClick = onOpenThemePicker,
+                        modifier = Modifier.testTag("open_theme_picker_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Palette,
+                            contentDescription = "تغيير لون الخلفية",
+                            tint = MaterialTheme.colorScheme.onPrimary
+                        )
+                    }
                     if (isAdmin) {
                         IconButton(
                             onClick = onOpenAdmin,

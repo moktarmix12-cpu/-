@@ -36,7 +36,9 @@ import com.example.ui.screens.LessonScreen
 import com.example.ui.screens.PaymentActivationScreen
 import com.example.ui.screens.QuizScreen
 import com.example.ui.screens.SummaryScreen
+import com.example.ui.theme.AppBackgroundTheme
 import com.example.ui.theme.SirahKidsTheme
+import com.example.ui.theme.ThemePreferences
 import com.example.ui.viewmodel.SirahViewModel
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -60,8 +62,17 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            SirahKidsTheme {
-                SirahRootApp()
+            val context = LocalContext.current
+            val scope = rememberCoroutineScope()
+            val selectedTheme by ThemePreferences.observeTheme(context)
+                .collectAsStateWithLifecycle(initialValue = AppBackgroundTheme.SKY_BLUE)
+            SirahKidsTheme(selectedTheme = selectedTheme) {
+                SirahRootApp(
+                    currentTheme = selectedTheme,
+                    onSelectTheme = { newTheme ->
+                        scope.launch { ThemePreferences.saveTheme(context, newTheme) }
+                    }
+                )
             }
         }
     }
@@ -76,7 +87,11 @@ internal fun FirebaseAuth.authStateFlow(): Flow<FirebaseUser?> = callbackFlow {
 }
 
 @Composable
-fun SirahRootApp(auth: FirebaseAuth = Firebase.auth) {
+fun SirahRootApp(
+    currentTheme: AppBackgroundTheme = AppBackgroundTheme.SKY_BLUE,
+    onSelectTheme: (AppBackgroundTheme) -> Unit = {},
+    auth: FirebaseAuth = Firebase.auth
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val credentialManager = remember { CredentialManager.create(context) }
@@ -109,6 +124,8 @@ fun SirahRootApp(auth: FirebaseAuth = Firebase.auth) {
             )
             SirahNavHost(
                 viewModel = viewModel,
+                currentTheme = currentTheme,
+                onSelectTheme = onSelectTheme,
                 onSignOut = {
                     signOutUser(credentialManager = credentialManager, scope = scope)
                 }
@@ -120,6 +137,8 @@ fun SirahRootApp(auth: FirebaseAuth = Firebase.auth) {
 @Composable
 fun SirahNavHost(
     viewModel: SirahViewModel,
+    currentTheme: AppBackgroundTheme,
+    onSelectTheme: (AppBackgroundTheme) -> Unit,
     onSignOut: () -> Unit
 ) {
     val navController = rememberNavController()
@@ -166,6 +185,8 @@ fun SirahNavHost(
                         userProfileState = userProfileState,
                         chapters = chapters,
                         isAdmin = isAdmin,
+                        currentTheme = currentTheme,
+                        onSelectTheme = onSelectTheme,
                         onChapterClick = { chapter, isUnlocked ->
                             if (isUnlocked) {
                                 navController.navigate("lesson/${chapter.chapterNumber}")

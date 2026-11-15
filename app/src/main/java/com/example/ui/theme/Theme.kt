@@ -1,6 +1,5 @@
 package com.example.ui.theme
 
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Shapes
@@ -13,7 +12,76 @@ import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 
-private val LightColorScheme = lightColorScheme(
+private val SkyBlueColorScheme = lightColorScheme(
+    primary = SkyNavyPrimary,
+    onPrimary = Color.White,
+    primaryContainer = SkyLightContainer,
+    onPrimaryContainer = SkyOnLightContainer,
+    secondary = GoldSecondary,
+    onSecondary = Color.White,
+    secondaryContainer = GoldContainer,
+    onSecondaryContainer = OnGoldContainer,
+    tertiary = Color(0xFF1F618D),
+    onTertiary = Color.White,
+    tertiaryContainer = SkyLightContainer,
+    background = SkyBackground,
+    onBackground = SkyOnLightContainer,
+    surface = Color.White,
+    onSurface = SkyOnLightContainer,
+    surfaceVariant = SkySurfaceVariant,
+    onSurfaceVariant = Color(0xFF3E5669),
+    outline = Color(0xFFC2D6E8),
+    error = ErrorCrimson,
+    onError = Color.White
+)
+
+private val EmeraldCreamColorScheme = lightColorScheme(
+    primary = EmeraldPrimary,
+    onPrimary = Color.White,
+    primaryContainer = EmeraldContainer,
+    onPrimaryContainer = OnEmeraldContainer,
+    secondary = GoldSecondary,
+    onSecondary = Color.White,
+    secondaryContainer = GoldContainer,
+    onSecondaryContainer = OnGoldContainer,
+    tertiary = TealTertiary,
+    onTertiary = Color.White,
+    tertiaryContainer = TealContainer,
+    background = CreamBackground,
+    onBackground = Color(0xFF18241C),
+    surface = Color.White,
+    onSurface = Color(0xFF18241C),
+    surfaceVariant = SandSurfaceVariant,
+    onSurfaceVariant = Color(0xFF56665C),
+    outline = Color(0xFFD8CEBC),
+    error = ErrorCrimson,
+    onError = Color.White
+)
+
+private val SandGoldColorScheme = lightColorScheme(
+    primary = SandBrownPrimary,
+    onPrimary = Color.White,
+    primaryContainer = SandGoldContainer,
+    onPrimaryContainer = SandOnContainer,
+    secondary = GoldSecondary,
+    onSecondary = Color.White,
+    secondaryContainer = GoldContainer,
+    onSecondaryContainer = OnGoldContainer,
+    tertiary = Color(0xFF8C5D27),
+    onTertiary = Color.White,
+    tertiaryContainer = SandGoldContainer,
+    background = SandWarmBackground,
+    onBackground = SandOnContainer,
+    surface = Color.White,
+    onSurface = SandOnContainer,
+    surfaceVariant = SandCardVariant,
+    onSurfaceVariant = Color(0xFF665138),
+    outline = Color(0xFFDECBA8),
+    error = ErrorCrimson,
+    onError = Color.White
+)
+
+private val WhiteBlackColorScheme = lightColorScheme(
     primary = MonoBlackPrimary,
     onPrimary = Color.White,
     primaryContainer = MonoLightContainer,
@@ -22,9 +90,9 @@ private val LightColorScheme = lightColorScheme(
     onSecondary = Color.White,
     secondaryContainer = MonoSoftGrayContainer,
     onSecondaryContainer = MonoOnSoftGrayContainer,
-    tertiary = MonoSlateTertiary,
+    tertiary = Color(0xFF333333),
     onTertiary = Color.White,
-    tertiaryContainer = MonoTertiaryContainer,
+    tertiaryContainer = Color(0xFFEDEDED),
     onTertiaryContainer = MonoOnLightContainer,
     background = PureWhiteBackground,
     onBackground = CrispBlackInk,
@@ -37,24 +105,24 @@ private val LightColorScheme = lightColorScheme(
     onError = Color.White
 )
 
-private val DarkColorScheme = darkColorScheme(
-    primary = DarkMonoWhitePrimary,
+private val DarkNightColorScheme = darkColorScheme(
+    primary = Color(0xFFFFFFFF),
     onPrimary = Color.Black,
-    primaryContainer = Color(0xFF242424),
+    primaryContainer = Color(0xFF242429),
     onPrimaryContainer = Color.White,
-    secondary = DarkMonoCharcoalSecondary,
+    secondary = Color(0xFFE0E0E0),
     onSecondary = Color.Black,
-    secondaryContainer = Color(0xFF2B2B2B),
+    secondaryContainer = Color(0xFF2C2C32),
     onSecondaryContainer = Color.White,
-    tertiary = Color(0xFFD0D0D0),
+    tertiary = Color(0xFFD0D0D6),
     onTertiary = Color.Black,
     background = DarkPureBlackBackground,
     onBackground = Color.White,
     surface = DarkElevatedSurface,
     onSurface = Color.White,
     surfaceVariant = DarkElevatedSurfaceVariant,
-    onSurfaceVariant = Color(0xFFC8C8C8),
-    outline = Color(0xFF3E3E3E)
+    onSurfaceVariant = Color(0xFFC8C8D0),
+    outline = Color(0xFF3E3E46)
 )
 
 val SirahShapes = Shapes(
@@ -66,10 +134,16 @@ val SirahShapes = Shapes(
 
 @Composable
 fun SirahKidsTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    selectedTheme: AppBackgroundTheme = AppBackgroundTheme.SKY_BLUE,
     content: @Composable () -> Unit
 ) {
-    val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val colorScheme = when (selectedTheme) {
+        AppBackgroundTheme.SKY_BLUE -> SkyBlueColorScheme
+        AppBackgroundTheme.EMERALD_CREAM -> EmeraldCreamColorScheme
+        AppBackgroundTheme.SAND_GOLD -> SandGoldColorScheme
+        AppBackgroundTheme.WHITE_BLACK -> WhiteBlackColorScheme
+        AppBackgroundTheme.DARK_NIGHT -> DarkNightColorScheme
+    }
 
     CompositionLocalProvider(LocalLayoutDirection provides LayoutDirection.Rtl) {
         MaterialTheme(
